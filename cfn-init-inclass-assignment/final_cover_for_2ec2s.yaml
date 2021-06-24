@@ -1,0 +1,121 @@
+---
+Parameters:
+  SSHKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Utilize available keys to create multiple instances. 
+Resources:
+  Server1:
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT3M
+        #Count: 2
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              httpd: []
+          files:
+            "/var/www/html/index.html":
+              content: |
+                <html>
+                  <body>
+                    <h1>Hey There</h1>
+                    <h2>This is Server1 configured the CF accurately</h2>
+                    <p>That's why you are able to see this page!</p>
+                  </body>
+                </html>
+              mode: '000644'
+              owner: root
+              group: root
+          services: # wt r the services u want to start and enable
+            sysvinit:
+              httpd:
+                enabled: 'true'
+                ensureRunning: 'true'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0aeeebd8d2ab47354
+      KeyName: !Ref SSHKey
+      SecurityGroups:
+        - !Ref SecurityGrouphttp
+        - !Ref SecurityGroupssh
+      Tags:
+        - Key: Name
+          Value: CFN-Server1
+        - Key: Type
+          Value: Worker Instance
+      UserData:
+        'Fn::Base64': !Sub |
+          #!/bin/bash -ex
+          yum update -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource Server1 --region ${AWS::Region}
+          # Signal the status from cfn-init (via $?)
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource Server1 --region ${AWS::Region}
+  Server2:  
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT3M
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              httpd: []
+          files:
+            "/var/www/html/index.html":
+              content: |
+               <html>
+                 <body>
+                   <h1>Hey There</h1>
+                   <h2>This is Server2 configured the CF accurately</h2>
+                   <p>That's why you are able to see this page!</p>
+                 </body>
+                </html>
+              mode: '000644'
+              owner: root
+              group: root
+          services: # wt r the services u want to start and enable
+            sysvinit:
+              httpd:
+                enabled: 'true'
+                ensureRunning: 'true'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0aeeebd8d2ab47354
+      KeyName: !Ref SSHKey
+      SecurityGroups:
+        - !Ref SecurityGrouphttp
+        - !Ref SecurityGroupssh
+      Tags:
+        - Key: Name
+          Value: CFN-Server2
+        - Key: Type
+          Value: Worker Instance
+      UserData:
+        'Fn::Base64': !Sub |
+          #!/bin/bash -ex
+          yum update -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource Server2 --region ${AWS::Region}
+          # Signal the status from cfn-init (via $?)
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource Server2 --region ${AWS::Region}
+  SecurityGrouphttp:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Opening up HTTP port
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80 
+  SecurityGroupssh:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Opening up SSH port
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22 
+        IpProtocol: tcp
+        ToPort: 22

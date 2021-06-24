@@ -1,0 +1,45 @@
+CloudFormation
+
+What is CloudFormation?
+is a service that gives developers an easy way to create a collection of related AWS resources. 
+
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  String
+
+Metadata:
+  template metadata
+
+Parameters:
+  set of parameters
+
+Rules:
+  set of rules
+
+Mappings:
+  set of mappings
+
+Conditions:
+  set of conditions
+
+Transform:
+  set of transforms
+
+Resources:
+  set of resources
+
+Outputs:
+  set of outputs
+
+
+__________________
+
+Create A stack 
+
+1. template is ready 
+2. upload a template if you want to upload one u have 
+
+Create a CloudFormation template that will Create one instance, 
+two security groups, one EIP and open port 22.

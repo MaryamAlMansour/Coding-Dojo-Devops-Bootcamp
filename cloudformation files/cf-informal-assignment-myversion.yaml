@@ -1,0 +1,42 @@
+Resources:
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Allowing ssh to the host
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.0.0.0/24
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0aeeebd8d2ab47354
+      SecurityGroups:
+        - !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: cf-ec2-class-demo
+        - Key: Type
+          Value: Worker Instance
+  MyEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref Ec2Instance
+
+
+  # myWaitHandel:
+  #   Type: AWS::CloudFormation::WaitConditionHandle
+  # WaitCondition:
+  #   Type: AWS::CloudFormation::WaitCondition
+  #   Properties: 
+  #     Handle: !Ref myWaitHandel
+  #     Timeout: 3000 
+
+  WaitCondition:
+  Type: AWS::CloudFormation::WaitCondition
+  CreationPolicy:
+    ResourceSignal:
+      Timeout: PT5M
+      Count: 1

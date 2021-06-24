@@ -1,0 +1,122 @@
+---
+Parameters:
+  SSHKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Utilize available keys to create multiple instances. 
+Resources:
+  Server1:
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0aeeebd8d2ab47354
+      KeyName: !Ref SSHKey
+      SecurityGroups:
+        - !Ref SecurityGroupSSH
+        - !Ref SecurityGroupHTTP
+      Tags:
+        - Key: Name
+          Value: CFN-EC2-Devops
+      UserData:
+          Fn::Base64:
+            !Sub | # used to subsitite the referenced value between ${}
+              #!/bin/bash -ex
+              yum update -y aws-cfn-bootstrap
+              /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} -r Server1 --region ${AWS::Region}
+              /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} -r Server1 --region ${AWS::Region}
+    Metadata: # where ull include cfn-init and all its packages  to be installed
+      AWS::CloudFormation::Init: 
+        config: # its either config or configset (will set up ur EC2 n wts inside it)
+          packages: # wt are the packages ull use
+            yum: #  in our case we are utilizing yum to install httpd
+              httpd: []
+          files:
+            "/var/www/html/index.html":
+              content: |
+               <html>
+                 <body>
+                   <h1>Hey There</h1>
+                   <h2>This is just to show you I Server 1 configured CloudFormation Template Accuratly</h2>
+                   <p>That's why you are able to see this page!</p>
+                 </body>
+                </html>
+              mode: '000644'
+              owner: root
+              group: root
+          services: # wt r the services u want to start and enable
+            sysvinit:
+              httpd:
+                enabled: 'true'
+                ensureRunning: 'true'
+  # Server2:
+  #   Type: AWS::EC2::Instance
+  #   CreationPolicy:
+  #       ResourceSignal:
+  #         Timeout: PT4M
+  #   Properties:
+  #     InstanceType: t2.micro
+  #     ImageId: ami-0aeeebd8d2ab47354
+  #     KeyName: !Ref SSHKey
+  #     SecurityGroups:
+  #       - !Ref SecurityGroupSSH
+  #       - !Ref SecurityGroupHTTP
+  #     Tags:
+  #       - Key: Name
+  #         Value: CFN-EC2-DataEngineers
+  #     UserData:
+  #         Fn::Base64:
+  #           !Sub | # used to subsitite the referenced value between ${}
+  #             #!/bin/bash -ex
+  #             yum update -y aws-cfn-bootstrap
+  #             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} -r Server2 --region ${AWS::Region}
+  #             /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} -r Server2 --region ${AWS::Region}
+  #   Metadata: # where ull include cfn-init and all its packages  to be installed
+  #     AWS::CloudFormation::Init: 
+  #       config: # its either config or configset (will set up ur EC2 n wts inside it)
+  #         packages: # wt are the packages ull use
+  #           yum: #  in our case we are utilizing yum to install httpd
+  #             httpd: []
+  #         files:
+  #           "/var/www/html/index.html":
+  #             content: |
+  #               <html>
+  #                 <body>
+  #                   <h1>Hey There</h1>
+  #                   <h2>This is just to show you I Server 2 configured CloudFormation Template Accuratly</h2>
+  #                   <p>That's why you are able to see this page!</p>
+  #                 </body>
+  #               </html>
+  #             mode: '000644' # user readable and writable, and group ownership readable only
+  #             owner: root
+  #             group: root
+  #         services: # wt r the services u want to start and enable
+  #           sysvinit:
+  #             httpd:
+  #               enabled: 'true'
+  #               ensureRunning: 'true' 
+  # WaitCondition:
+  #   Type: AWS::CloudFormation::WaitCondition
+  #   CreationPolicy:
+  #     ResourceSignal:
+  #       Timeout: PT2M
+  #       #Count: 2
+  SecurityGroupHTTP:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Opening up HTTP Port
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80 
+  SecurityGroupSSH:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Opening up SSH Port
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22 
+        IpProtocol: tcp
+        ToPort: 22
